@@ -8,7 +8,6 @@ exports.processCalculation = (req, res) => {
   }
 
   const records = [];
-  // Pre-calculate maps for faster lookups
   const betTypeGroups = {
     "4D": new Map(),
     "3D": new Map(),
@@ -58,30 +57,25 @@ exports.processCalculation = (req, res) => {
       let bestCount = 0;
       let bestPayoutSum = Infinity;
 
-      // Optimize number generation loop
       for (let i = 0; i < 10000; i++) {
         const candidate = i.toString().padStart(4, "0");
         let candidateWinners = [];
         let candidatePayoutSum = 0;
         
-        // Check 2D matches
         const matches2D = betTypeGroups["2D"].get(candidate.substring(2)) || [];
         candidateWinners = candidateWinners.concat(matches2D);
         candidatePayoutSum += matches2D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
         
-        // Check 3D matches
         const matches3D = betTypeGroups["3D"].get(candidate.substring(1)) || [];
         candidateWinners = candidateWinners.concat(matches3D);
         candidatePayoutSum += matches3D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
 
-        // Check 4D matches
         const matches4D = betTypeGroups["4D"].get(candidate) || [];
         candidateWinners = candidateWinners.concat(matches4D);
         candidatePayoutSum += matches4D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
 
         const candidateCount = candidateWinners.length;
 
-        // Early exit if we can't beat the best count
         if (candidatePayoutSum > prizePool || 
             (candidateCount < bestCount) || 
             (candidateCount === bestCount && candidatePayoutSum >= bestPayoutSum)) {
@@ -108,7 +102,6 @@ exports.processCalculation = (req, res) => {
         user: r.User
       }));
 
-      // Ensure all values in the response are valid numbers
       res.json({
         winningNumber: chosenCandidate.candidate,
         winners,
