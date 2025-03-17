@@ -8,22 +8,48 @@ exports.processCalculation = (req, res) => {
   }
 
   const records = [];
+  // Pre-calculate maps for faster lookups
+  const betTypeGroups = {
+    "4D": new Map(),
+    "3D": new Map(),
+    "2D": new Map()
+  };
 
   fs.createReadStream(req.file.path)
     .pipe(csvParser())
     .on("data", (row) => {
       row.Bayar = Number(row.Bayar);
       row.x = Number(row.x);
-      row.PotPayout = row.Bayar * row.x;
-      if (row.Inv.substring(0, 2) === "4D" && row.Tebak.length === 3) {
-        row.Tebak = row.Tebak.padStart(4, "0");
+      row.Bet = Number(row.Bet);
+      row.PotPayout = row.Bet * row.x;
+      
+      const betType = row.Inv.substring(0, 2);
+      switch(betType) {
+        case "4D":
+          row.Tebak = row.Tebak.padStart(4, "0");
+          break;
+        case "3D":
+          row.Tebak = row.Tebak.padStart(3, "0");
+          break;
+        case "2D":
+          row.Tebak = row.Tebak.padStart(2, "0");
+          break;
       }
+      
       records.push(row);
+
+      const group = betTypeGroups[betType];
+      if (group) {
+        if (!group.has(row.Tebak)) {
+          group.set(row.Tebak, []);
+        }
+        group.get(row.Tebak).push(row);
+      }
     })
     .on("end", () => {
       deleteFile(req.file.path);
 
-      const totalBayar = records.reduce((sum, record) => sum + record.Bayar, 0);
+      const totalBayar = records.reduce((sum, record) => sum + (record.Bayar), 0);
       const companyRevenue = totalBayar * 0.2;
       const prizePool = totalBayar * 0.8;
       const totalPlayers = records.length;
@@ -32,32 +58,42 @@ exports.processCalculation = (req, res) => {
       let bestCount = 0;
       let bestPayoutSum = Infinity;
 
+      // Optimize number generation loop
       for (let i = 0; i < 10000; i++) {
         const candidate = i.toString().padStart(4, "0");
-        const candidateWinners = [];
+        let candidateWinners = [];
+        let candidatePayoutSum = 0;
+        
+        // Check 2D matches
+        const matches2D = betTypeGroups["2D"].get(candidate.substring(2)) || [];
+        candidateWinners = candidateWinners.concat(matches2D);
+        candidatePayoutSum += matches2D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
+        
+        // Check 3D matches
+        const matches3D = betTypeGroups["3D"].get(candidate.substring(1)) || [];
+        candidateWinners = candidateWinners.concat(matches3D);
+        candidatePayoutSum += matches3D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
 
-        records.forEach((record) => {
-          const betType = record.Inv.substring(0, 2);
-          if ((betType === "4D" && candidate === record.Tebak) ||
-              (betType === "3D" && candidate.substring(1) === record.Tebak) ||
-              (betType === "2D" && candidate.substring(2) === record.Tebak)) {
-            candidateWinners.push(record);
-          }
-        });
+        // Check 4D matches
+        const matches4D = betTypeGroups["4D"].get(candidate) || [];
+        candidateWinners = candidateWinners.concat(matches4D);
+        candidatePayoutSum += matches4D.reduce((sum, rec) => sum + (rec.PotPayout || 0), 0);
 
-        const candidatePayoutSum = candidateWinners.reduce(
-          (sum, rec) => sum + rec.PotPayout, 0
-        );
         const candidateCount = candidateWinners.length;
 
-        if (candidatePayoutSum <= prizePool) {
-          if (candidateCount > bestCount || (candidateCount === bestCount && candidatePayoutSum < bestPayoutSum)) {
-            bestCount = candidateCount;
-            bestPayoutSum = candidatePayoutSum;
-            bestCandidates = [{ candidate, candidateWinners, candidatePayoutSum }];
-          } else if (candidateCount === bestCount && candidatePayoutSum === bestPayoutSum) {
-            bestCandidates.push({ candidate, candidateWinners, candidatePayoutSum });
-          }
+        // Early exit if we can't beat the best count
+        if (candidatePayoutSum > prizePool || 
+            (candidateCount < bestCount) || 
+            (candidateCount === bestCount && candidatePayoutSum >= bestPayoutSum)) {
+          continue;
+        }
+
+        if (candidateCount > bestCount || (candidateCount === bestCount && candidatePayoutSum < bestPayoutSum)) {
+          bestCount = candidateCount;
+          bestPayoutSum = candidatePayoutSum;
+          bestCandidates = [{ candidate, candidateWinners, candidatePayoutSum }];
+        } else if (candidateCount === bestCount && candidatePayoutSum === bestPayoutSum) {
+          bestCandidates.push({ candidate, candidateWinners, candidatePayoutSum });
         }
       }
 
@@ -72,15 +108,20 @@ exports.processCalculation = (req, res) => {
         user: r.User
       }));
 
+      // Ensure all values in the response are valid numbers
       res.json({
         winningNumber: chosenCandidate.candidate,
         winners,
-        totalBayar,
-        companyRevenue,
-        prizePool,
-        totalPlayers,
+        totalBayar: totalBayar,
+        companyRevenue: companyRevenue,
+        prizePool: prizePool,
+        totalPlayers: totalPlayers,
         totalWinners: winners.length,
-        winningPercentage: ((winners.length / totalPlayers) * 100).toFixed(2)
+        winningPercentage: ((winners.length / (totalPlayers || 1)) * 100).toFixed(2)
       });
+    })
+    .on('error', (error) => {
+      console.error('Error processing CSV:', error);
+      res.status(500).json({ error: 'Error processing CSV file' });
     });
 };

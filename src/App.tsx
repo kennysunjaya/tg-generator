@@ -120,25 +120,33 @@ const App: React.FC = () => {
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-blue-50 h-full">
                   <h3 className="text-xl text-blue-800 mb-3 font-medium">Total Bayar</h3>
-                  <p className="text-2xl text-blue-900 font-bold m-0">{result.totalBayar.toLocaleString()}</p>
+                  <p className="text-2xl text-blue-900 font-bold m-0">
+                    {(result.totalBayar || 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-pink-50 h-full">
                   <h3 className="text-xl text-pink-800 mb-3 font-medium">Profit - 20%</h3>
-                  <p className="text-2xl text-pink-900 font-bold m-0">{result.companyRevenue.toLocaleString()}</p>
+                  <p className="text-2xl text-pink-900 font-bold m-0">
+                    {(result.companyRevenue || 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-green-50 h-full">
                   <h3 className="text-xl text-green-800 mb-3 font-medium">Prize Pool</h3>
-                  <p className="text-2xl text-green-900 font-bold m-0">{result.prizePool.toLocaleString()}</p>
+                  <p className="text-2xl text-green-900 font-bold m-0">
+                    {(result.prizePool || 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-yellow-50 h-full">
                   <h3 className="text-xl text-yellow-800 mb-3 font-medium">Total Players</h3>
-                  <p className="text-2xl text-yellow-900 font-bold m-0">{result.totalPlayers}</p>
+                  <p className="text-2xl text-yellow-900 font-bold m-0">
+                    {(result.totalPlayers || 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
             </div>
