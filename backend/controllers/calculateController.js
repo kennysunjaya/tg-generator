@@ -15,6 +15,9 @@ exports.processCalculation = (req, res) => {
       row.Bayar = Number(row.Bayar);
       row.x = Number(row.x);
       row.PotPayout = row.Bayar * row.x;
+      if (row.Inv.substring(0, 2) === "4D" && row.Tebak.length === 3) {
+        row.Tebak = row.Tebak.padStart(4, "0");
+      }
       records.push(row);
     })
     .on("end", () => {
