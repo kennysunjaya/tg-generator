@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FileUpload } from "primereact/fileupload";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
+import { InputNumber } from "primereact/inputnumber";
 import axios from "axios";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -22,16 +23,27 @@ interface CalculationResult {
   totalPlayers: number;
   totalWinners: number;
   winningPercentage: string;
+  profitPercentage?: number;
 }
 
 const App: React.FC = () => {
   const [result, setResult] = useState<CalculationResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [profitPercentage, setProfitPercentage] = useState<number>(20);
 
   const handleUpload = (event: any) => {
     const file = event.files[0];
+    setUploadedFile(file);
+  };
+
+  const handleGenerate = () => {
+    if (!uploadedFile || profitPercentage === null) return;
+
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", uploadedFile);
+    formData.append("profitPercentage", profitPercentage.toString());
+    
     setLoading(true);
     axios
       .post("http://localhost:5000/calculate", formData)
@@ -39,6 +51,7 @@ const App: React.FC = () => {
         console.log(res.data);
         setResult(res.data);
         setLoading(false);
+        setUploadedFile(null); // Reset for next use
       })
       .catch((err) => {
         console.error(err);
@@ -49,6 +62,8 @@ const App: React.FC = () => {
   const handleBack = () => {
     setResult(null);
     setLoading(false);
+    setUploadedFile(null);
+    setProfitPercentage(20);
   };
 
   return (
@@ -75,16 +90,39 @@ const App: React.FC = () => {
             Unggah file CSV untuk menghitung hasil undian dan menentukan pemenang.
           </p>
           {!result && (
-            <FileUpload
-              mode="basic"
-              name="file"
-              accept=".csv"
-              customUpload
-              auto
-              uploadHandler={handleUpload}
-              chooseLabel="Upload CSV"
-              className="p-button-rounded"
-            />
+            <div className="flex flex-column align-items-center gap-4">
+              <FileUpload
+                mode="basic"
+                name="file"
+                accept=".csv"
+                customUpload
+                auto
+                uploadHandler={handleUpload}
+                chooseLabel={uploadedFile ? "File Selected" : "Upload CSV"}
+                className="p-button-rounded"
+              />
+              
+              <div className="flex align-items-center gap-2">
+                <label htmlFor="profit" className="font-medium">Profit Percentage:</label>
+                <InputNumber
+                  id="profit"
+                  value={profitPercentage}
+                  onValueChange={(e) => setProfitPercentage(e.value ?? 20)}
+                  suffix="%"
+                  min={0}
+                  max={100}
+                  style={{ width: '150px' }}
+                />
+              </div>
+
+              <Button
+                label="Generate Result"
+                icon="pi pi-check"
+                onClick={handleGenerate}
+                disabled={!uploadedFile || profitPercentage === null}
+                className="p-button-rounded p-button-success"
+              />
+            </div>
           )}
         </div>
 
@@ -127,7 +165,7 @@ const App: React.FC = () => {
               </div>
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-pink-50 h-full">
-                  <h3 className="text-xl text-pink-800 mb-3 font-medium">Profit - 20%</h3>
+                  <h3 className="text-xl text-pink-800 mb-3 font-medium">Profit - {result.profitPercentage || profitPercentage}%</h3>
                   <p className="text-2xl text-pink-900 font-bold m-0">
                     {(result.companyRevenue || 0).toLocaleString()}
                   </p>

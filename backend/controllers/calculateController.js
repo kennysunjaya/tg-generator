@@ -7,6 +7,11 @@ exports.processCalculation = (req, res) => {
     return res.status(400).json({ error: "No file uploaded." });
   }
 
+  const profitPercentage = parseFloat(req.body.profitPercentage) || 20;
+  if (profitPercentage < 0 || profitPercentage > 100) {
+    return res.status(400).json({ error: "Profit percentage must be between 0 and 100." });
+  }
+
   const records = [];
   const betTypeGroups = {
     "4D": new Map(),
@@ -49,8 +54,9 @@ exports.processCalculation = (req, res) => {
       deleteFile(req.file.path);
 
       const totalBayar = records.reduce((sum, record) => sum + (record.Bayar), 0);
-      const companyRevenue = totalBayar * 0.2;
-      const prizePool = totalBayar * 0.8;
+      const profitRatio = profitPercentage / 100;
+      const companyRevenue = totalBayar * profitRatio;
+      const prizePool = totalBayar * (1 - profitRatio);
       const totalPlayers = records.length;
 
       let bestCandidates = [];
@@ -110,7 +116,8 @@ exports.processCalculation = (req, res) => {
         prizePool: prizePool,
         totalPlayers: totalPlayers,
         totalWinners: winners.length,
-        winningPercentage: ((winners.length / (totalPlayers || 1)) * 100).toFixed(2)
+        winningPercentage: ((winners.length / (totalPlayers || 1)) * 100).toFixed(2),
+        profitPercentage: profitPercentage
       });
     })
     .on('error', (error) => {
