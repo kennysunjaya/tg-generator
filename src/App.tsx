@@ -43,15 +43,15 @@ const App: React.FC = () => {
     const formData = new FormData();
     formData.append("file", uploadedFile);
     formData.append("profitPercentage", profitPercentage.toString());
-    
+
     setLoading(true);
     axios
-      .post("http://localhost:5000/calculate", formData)
+      .post("https://tg-generator.onrender.com/calculate", formData)
       .then((res) => {
         console.log(res.data);
         setResult(res.data);
         setLoading(false);
-        setUploadedFile(null); // Reset for next use
+        setUploadedFile(null);
       })
       .catch((err) => {
         console.error(err);
@@ -67,27 +67,30 @@ const App: React.FC = () => {
   };
 
   return (
-    <div 
-      className="flex align-items-center justify-content-center" 
-      style={{ 
-        minHeight: "100vh", 
+    <div
+      className="flex align-items-center justify-content-center"
+      style={{
+        minHeight: "100vh",
         backgroundColor: "#f8f9fa",
-        padding: "2rem"
+        padding: "2rem",
       }}
     >
-      <Card className="shadow-4" style={{ width: '100%', maxWidth: '800px' }}>
+      <Card className="shadow-4" style={{ width: "100%", maxWidth: "800px" }}>
         {result && (
-          <Button 
-            label="Back" 
-            icon="pi pi-arrow-left" 
-            onClick={handleBack} 
+          <Button
+            label="Back"
+            icon="pi pi-arrow-left"
+            onClick={handleBack}
             className="p-button-rounded p-button-secondary mb-4"
           />
         )}
         <div className="text-center mb-5">
-          <h1 className="text-3xl font-bold text-900 mb-3">Togel Number Generator</h1>
+          <h1 className="text-3xl font-bold text-900 mb-3">
+            Togel Number Generator
+          </h1>
           <p className="text-600 mb-4">
-            Unggah file CSV untuk menghitung hasil undian dan menentukan pemenang.
+            Unggah file CSV untuk menghitung hasil undian dan menentukan
+            pemenang.
           </p>
           {!result && (
             <div className="flex flex-column align-items-center gap-4">
@@ -101,9 +104,11 @@ const App: React.FC = () => {
                 chooseLabel={uploadedFile ? "File Selected" : "Upload CSV"}
                 className="p-button-rounded"
               />
-              
+
               <div className="flex align-items-center gap-2">
-                <label htmlFor="profit" className="font-medium">Profit Percentage:</label>
+                <label htmlFor="profit" className="font-medium">
+                  Profit Percentage:
+                </label>
                 <InputNumber
                   id="profit"
                   value={profitPercentage}
@@ -111,7 +116,7 @@ const App: React.FC = () => {
                   suffix="%"
                   min={0}
                   max={100}
-                  style={{ width: '150px' }}
+                  style={{ width: "150px" }}
                 />
               </div>
 
@@ -128,29 +133,27 @@ const App: React.FC = () => {
 
         {loading && (
           <div className="text-center">
-            <i className="pi pi-spin pi-spinner" style={{ fontSize: '2rem' }}></i>
+            <i className="pi pi-spin pi-spinner" style={{ fontSize: "2rem" }}></i>
             <p className="mt-2">Processing your request...</p>
           </div>
         )}
 
         {result && (
           <div className="mt-4">
-            <div className="mb-5">
-              <div className="text-center">
-                <h2 className="text-xl text-600 mb-2">Winning Number</h2>
-                <div 
-                  className="font-bold text-6xl mb-4 p-3 border-round"
-                  style={{ 
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: 'white',
-                    display: 'inline-block',
-                    padding: '1rem 3rem',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {result.winningNumber}
-                </div>
+            <div className="mb-5 text-center">
+              <h2 className="text-xl text-600 mb-2">Winning Number</h2>
+              <div
+                className="font-bold text-6xl mb-4 p-3 border-round"
+                style={{
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "white",
+                  display: "inline-block",
+                  padding: "1rem 3rem",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
+                }}
+              >
+                {result.winningNumber}
               </div>
             </div>
 
@@ -165,7 +168,9 @@ const App: React.FC = () => {
               </div>
               <div className="col-12 md:col-3">
                 <div className="p-4 border-round bg-pink-50 h-full">
-                  <h3 className="text-xl text-pink-800 mb-3 font-medium">Profit - {result.profitPercentage || profitPercentage}%</h3>
+                  <h3 className="text-xl text-pink-800 mb-3 font-medium">
+                    Profit - {result.profitPercentage || profitPercentage}%
+                  </h3>
                   <p className="text-2xl text-pink-900 font-bold m-0">
                     {(result.companyRevenue || 0).toLocaleString()}
                   </p>
@@ -195,18 +200,22 @@ const App: React.FC = () => {
                 <div className="flex align-items-center gap-4">
                   <div className="text-right">
                     <span className="block text-500 mb-1">Jumlah Pemenang</span>
-                    <span className="text-xl font-bold text-900">{result.totalWinners}</span>
+                    <span className="text-xl font-bold text-900">
+                      {result.totalWinners}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="block text-500 mb-1">Win Rate</span>
-                    <span className="text-xl font-bold text-900">{result.winningPercentage}%</span>
+                    <span className="text-xl font-bold text-900">
+                      {result.winningPercentage}%
+                    </span>
                   </div>
                 </div>
               </div>
               {result.winners.length > 0 ? (
                 <ul className="list-none p-0 m-0">
                   {result.winners.map((winner, index) => (
-                    <li 
+                    <li
                       key={index}
                       className="p-3 mb-2 border-round surface-100 flex align-items-center justify-content-between"
                     >
