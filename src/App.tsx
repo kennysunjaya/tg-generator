@@ -3,6 +3,8 @@ import { FileUpload } from "primereact/fileupload";
 import { Card } from "primereact/card";
 import { Button } from "primereact/button";
 import { InputNumber } from "primereact/inputnumber";
+import { InputText } from "primereact/inputtext";
+import { Message } from "primereact/message";
 import axios from "axios";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -31,6 +33,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [profitPercentage, setProfitPercentage] = useState<number>(20);
+  const [excludedUsers, setExcludedUsers] = useState<string>("");
 
   const handleUpload = (event: any) => {
     const file = event.files[0];
@@ -44,6 +47,11 @@ const App: React.FC = () => {
     formData.append("file", uploadedFile);
     formData.append("profitPercentage", profitPercentage.toString());
     
+    // Add excluded users if any are specified
+    if (excludedUsers.trim()) {
+      formData.append("excludedUsers", excludedUsers.trim());
+    }
+    
     setLoading(true);
     axios
       .post("http://localhost:5000/calculate", formData)
@@ -51,7 +59,7 @@ const App: React.FC = () => {
         console.log(res.data);
         setResult(res.data);
         setLoading(false);
-        setUploadedFile(null); // Reset for next use
+        setUploadedFile(null);
       })
       .catch((err) => {
         console.error(err);
@@ -64,6 +72,7 @@ const App: React.FC = () => {
     setLoading(false);
     setUploadedFile(null);
     setProfitPercentage(20);
+    setExcludedUsers("");
   };
 
   return (
@@ -114,6 +123,25 @@ const App: React.FC = () => {
                   style={{ width: '150px' }}
                 />
               </div>
+
+              <div className="flex align-items-center gap-2" style={{ width: '100%', maxWidth: '500px' }}>
+                <label htmlFor="excluded-users" className="font-medium">Exclude Users:</label>
+                <InputText
+                  id="excluded-users"
+                  value={excludedUsers}
+                  onChange={(e) => setExcludedUsers(e.target.value)}
+                  placeholder="Enter usernames separated by comma"
+                  className="w-full"
+                />
+              </div>
+
+              {excludedUsers.trim() && (
+                <Message 
+                  severity="info" 
+                  text={`Users to be excluded: ${excludedUsers.split(',').map(u => u.trim()).filter(u => u).join(', ')}`}
+                  className="w-full"
+                />
+              )}
 
               <Button
                 label="Generate Result"

@@ -12,6 +12,11 @@ exports.processCalculation = (req, res) => {
     return res.status(400).json({ error: "Profit percentage must be between 0 and 100." });
   }
 
+  // Process excluded users
+  const excludedUsers = req.body.excludedUsers
+    ? req.body.excludedUsers.split(',').map(user => user.trim()).filter(user => user)
+    : [];
+
   const records = [];
   const betTypeGroups = {
     "4D": new Map(),
@@ -22,6 +27,11 @@ exports.processCalculation = (req, res) => {
   fs.createReadStream(req.file.path)
     .pipe(csvParser())
     .on("data", (row) => {
+      // Skip records if user is in excluded list
+      if (excludedUsers.includes(row.User)) {
+        return;
+      }
+
       row.Bayar = Number(row.Bayar);
       row.x = Number(row.x);
       row.Bet = Number(row.Bet);
@@ -117,7 +127,8 @@ exports.processCalculation = (req, res) => {
         totalPlayers: totalPlayers,
         totalWinners: winners.length,
         winningPercentage: ((winners.length / (totalPlayers || 1)) * 100).toFixed(2),
-        profitPercentage: profitPercentage
+        profitPercentage: profitPercentage,
+        excludedUsers: excludedUsers
       });
     })
     .on('error', (error) => {
