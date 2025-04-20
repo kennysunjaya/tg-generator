@@ -54,7 +54,7 @@ const App: React.FC = () => {
     
     setLoading(true);
     axios
-      .post("http://localhost:5000/calculate", formData)
+      .post("https://tg-generator.vercel.app/calculate", formData)
       .then((res) => {
         console.log(res.data);
         setResult(res.data);
